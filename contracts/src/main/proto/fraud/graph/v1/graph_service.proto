@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package fraud.graph.v1;
+
+option java_multiple_files = true;
+
+/// 
+/// GraphService provides APIs for managing and querying nodes and edges in the fraud graph.
+///
+service GraphService {
+  ///
+  /// UpsertNodes creates or updates nodes in the fraud graph.
+  ///
+    rpc UpsertNodes(UpsertNodesRequest) returns (UpsertNodesResponse);
+  ///
+  /// UpsertEdges creates or updates edges in the fraud graph.
+  ///
+  rpc UpsertEdges(UpsertEdgesRequest) returns (UpsertEdgesResponse);
+  ///
+  /// SampleSubgraph samples a subgraph from the fraud graph based on seed nodes and parameters.
+  ///
+  rpc SampleSubgraph(SampleSubgraphRequest) returns (SampleSubgraphResponse);
+}
+
+message Node {
+  string node_id = 1;
+  string node_type = 2; // e.g., "user", "device", "ip", "card"
+  map<string, string> properties = 3;
+  int64 created_at_ms = 4;
+  int64 updated_at_ms = 5;
+}
+
+message Edge {
+  string edge_id = 1;
+  string source_id = 2;
+  string target_id = 3;
+  string edge_type = 4; // e.g., "login_from", "payment_to", "same_device"
+  map<string, string> properties = 5;
+  int64 created_at_ms = 6;
+}
+
+message UpsertNodesRequest {
+  repeated Node nodes = 1;
+}
+
+message UpsertNodesResponse {
+  int32 nodes_updated = 1;
+}
+
+message UpsertEdgesRequest {
+  repeated Edge edges = 1;
+}
+
+message UpsertEdgesResponse {
+  int32 edges_updated = 1;
+}
+
+message SampleSubgraphRequest {
+  repeated string seed_node_ids = 1;
+  int32 hops = 2; // default 2
+  int32 neighbor_limit = 3; // default 100
+  int64 start_time_ms = 4;
+  int64 end_time_ms = 5;
+  repeated string edge_types = 6;
+}
+
+message SampleSubgraphResponse {
+  repeated Node nodes = 1;
+  repeated Edge edges = 2;
+  int64 snapshot_time_ms = 3;
+  int64 latency_ms = 4;
+  string error_message = 5;
+}

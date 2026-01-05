@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: risk-gateway
+  r2dbc:
+    host: localhost
+    port: 5432
+    database: risk_control
+    username: postgres
+    password: postgres
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  kafka:
+    bootstrap-servers: localhost:9092
+
+server:
+  port: 8080
+
+# gRPC clients
+grpc:
+  client:
+    graph-service:
+      address: 'static://localhost:9091'
+      negotiation-type: plaintext
+    feature-service:
+      address: 'static://localhost:9094'
+      negotiation-type: plaintext
+    model-service:
+      address: 'static://localhost:9093'
+      negotiation-type: plaintext
+
+# Resilience4j
+resilience4j:
+  circuitbreaker:
+    instances:
+      graphService:
+        register-health-indicator: true
+      featureService:
+        register-health-indicator: true
+      modelService:
+        register-health-indicator: true
+  timelimiter:
+    instances:
+      graphService:
+        timeout-duration: 3s
+      featureService:
+        timeout-duration: 2s
+      modelService:
+        timeout-duration: 3s
+  retry:
+    instances:
+      graphService:
+        max-attempts: 2
+      featureService:
+        max-attempts: 2
+      modelService:
+        max-attempts: 1
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.riskcontrol: DEBUG
+    io.grpc: INFO
+    io.netty: INFO
+    io.github.resilience4j: DEBUG

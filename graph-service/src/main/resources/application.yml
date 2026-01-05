@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: graph-service
+
+server:
+  port: 8091
+
+grpc:
+  server:
+    port: 9091
+
+logging:
+  level:
+    com.riskcontrol: DEBUG

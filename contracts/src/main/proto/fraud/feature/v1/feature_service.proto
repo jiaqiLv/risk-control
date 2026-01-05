@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package fraud.feature.v1;
+
+option java_multiple_files = true;
+
+
+/// 
+/// FeatureService provides APIs to retrieve feature values for fraud detection.
+///
+service FeatureService {
+  /// 
+  /// Retrieves feature values for a single subject.
+  ///
+  rpc GetFeatures(GetFeaturesRequest) returns (GetFeaturesResponse);
+  ///
+  /// Retrieves feature values for multiple subjects in a single request.
+  ///
+  rpc BatchGetFeatures(BatchGetFeaturesRequest) returns (BatchGetFeaturesResponse);
+}
+
+message FeatureValue {
+  string name = 1;
+  oneof value {
+    string string_value = 2;
+    int64 int_value = 3;
+    double double_value = 4;
+    bool bool_value = 5;
+  }
+  int64 last_updated_ms = 6;
+}
+
+message GetFeaturesRequest {
+  string request_id = 1;
+  string subject_type = 2;
+  string subject_id = 3;
+  repeated string feature_names = 4;
+  string feature_version = 5;
+}
+
+message GetFeaturesResponse {
+  string request_id = 1;
+  repeated FeatureValue features = 2;
+  bool cache_hit = 3;
+  int64 total_latency_ms = 4;
+  string error_message = 5;
+}
+
+message BatchGetFeaturesRequest {
+  string request_id = 1;
+  repeated FeatureQuery queries = 2;
+  string feature_version = 3;
+}
+
+message FeatureQuery {
+  string subject_type = 1;
+  string subject_id = 2;
+  repeated string feature_names = 3;
+}
+
+message BatchGetFeaturesResponse {
+  string request_id = 1;
+  repeated GetFeaturesResponse responses = 2;
+  int64 total_latency_ms = 3;
+  string error_message = 4;
+}

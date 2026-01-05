@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package fraud.model.v1;
+
+option java_multiple_files = true;
+
+///
+// ModelServing provides fraud prediction services using machine learning models.
+//
+service ModelServing {
+  // Predict returns a fraud score for the given subject and features using the specified model version.
+  rpc Predict(PredictRequest) returns (PredictResponse);
+}
+
+message PredictRequest {
+  string request_id = 1;
+  string subject_type = 2; // e.g., "user", "device", "merchant"
+  string subject_id = 3;
+  map<string, string> features = 4;
+  string model_version = 5;
+}
+
+message PredictResponse {
+  string request_id = 1;
+  double fraud_score = 2; // [0, 1]
+  string model_version = 3;
+  int64 inference_time_ms = 4;
+  string error_message = 5;
+}
