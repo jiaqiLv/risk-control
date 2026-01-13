@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package risk_infra;
+
+option java_package = "com.risk.contracts.build";
+option java_multiple_files = true;
+
+/// 
+/// RiskInfraService provides inference capabilities for risk infrastructure.
+///
+service RiskInfraService {
+  /// 
+  /// Performs inference using the provided request and returns the inference response.
+  ///
+  rpc Inference (InferenceRequest) returns (InferenceResponse);
+}
+
+message InferenceRequest {
+  string request_id = 1;
+  int64 request_timestamp_ms = 2;
+  string model_name = 3;
+  string model_version = 4;
+  string feature_version = 5;
+  SubGraph subgraph = 6;
+  // ---- business context (transaction) ----
+  TransactionContext tx = 7;
+  // ---- graph payload (optional) ----
+  GraphPayload graph = 8;
+  // ---- precomputed embeddings (optional) ----
+  repeated NodeEmbedding embeddings = 9;
+  // ---- behavior knobs ----
+  InferenceOptions options = 10;
+}
+
+message TransactionContext {
+  string transaction_id = 1;
+  string user_id = 2; // 业务主体（可以为空，但建议尽量给）
+  int64 event_timestamp_ms = 3; // 交易发生时间（与request时间区分）
+  double amount = 4;
+  string currency = 5;
+
+  // 可选：渠道/产品/场景
+  string product_cd = 6;
+  string channel = 7;
+
+  // 额外关键字段：建议留个扩展口
+  map<string, FeatureValue> attributes = 20;
+}
+
+message InferenceOptions {
+  // 如果embedding缺失：0=按模型默认策略，1=直接降级规则，2=请求图再算，3=用零向量
+  enum MissingEmbeddingPolicy {
+    MEP_UNSPECIFIED = 0;
+    MODEL_DEFAULT = 1;
+    FALLBACK_RULE = 2;
+    REQUIRE_GRAPH = 3;
+    ZERO_VECTOR = 4;
+  }
+
+  MissingEmbeddingPolicy missing_embedding_policy = 1;
+
+  // 是否要求必须包含 user 节点（用于冷启动策略）
+  bool require_user_node = 2;
+
+  // 允许 Python 在必要时再去特征库/图服务拉取（你也可以固定为 false，保持推理端纯）
+  bool allow_python_fetch = 3;
+}
+
+message GraphPayload {
+  SubGraph subgraph = 1;
+  int32 hops = 2;
+
+  // 说明这个子图是否完整（例如某 hop 取不到了）
+  bool is_partial = 3;
+
+  // 子图构建信息（便于回放/排查）
+  string graph_version = 4;
+  int64 graph_snapshot_timestamp_ms = 5;
+}
+
+message SubGraph {
+  repeated Node nodes = 1;
+  repeated Edge edges = 2;
+  int32 hops = 3;
+}
+
+message Node {
+  string node_id = 1;
+  string node_type = 2;
+  // 节点是否存在于图/特征库（用于“新用户不在库”的冷启动）
+  EntityStatus status = 3;
+
+  // 特征改为强类型，支持缺失
+  map<string, FeatureValue> features = 4;
+}
+
+message Edge {
+  string edge_id = 1;
+  string source_node_id = 2;
+  string target_node_id = 3;
+  string edge_type = 4;
+  float weight = 5;
+  map<string, FeatureValue> features = 6;
+}
+
+message EntityStatus {
+  enum Code {
+    UNKNOWN = 0;
+    PRESENT = 1; // 图/库中存在
+    NOT_FOUND = 2; // 明确不存在（冷启动）
+    PARTIAL = 3; // 部分信息存在（如只知道user_id但没有历史边）
+  }
+  Code code = 1;
+
+  // 例如：USER_NOT_IN_DB / DEVICE_EMBEDDING_MISSING / GRAPH_TIMEOUT
+  string reason = 2;
+}
+
+message NodeEmbedding {
+  string node_id = 1;
+  string node_type = 2;
+
+  // embedding 元信息：版本、维度、生成时间
+  string embedding_name = 3; // e.g. "user_gnn_emb"
+  string embedding_version = 4; // e.g. "2026-01-09"
+  int32 dim = 5;
+  int64 generated_timestamp_ms = 6;
+
+  // embedding 值：float 向量
+  repeated float values = 7;
+
+  // embedding 是否有效（过期/缺失/维度不匹配可标记）
+  bool valid = 8;
+  string invalid_reason = 9;
+}
+
+message FeatureValue {
+  oneof kind {
+    double f64 = 1;
+    int64 i64 = 2;
+    string str = 3;
+    bool b = 4;
+
+    // 稠密向量（比如一些统计embedding或手工embedding）
+    FloatVector vec = 5;
+  }
+
+  // 缺失语义：比“没有这个 key”更可控（对回放/解释特别重要）
+  bool is_missing = 100;
+  string missing_reason = 101; // e.g. "FIELD_ABSENT", "ENTITY_NOT_FOUND", "TIMEOUT"
+}
+
+message FloatVector {
+  int32 dim = 1;
+  repeated float values = 2;
+}
+
+
+message InferenceResponse {
+  string request_id = 1;
+  int64 response_timestamp_ms = 2;
+
+  string model_name = 3;
+  string model_version = 4;
+  string feature_version = 5;
+
+  Decision decision = 6;
+  double risk_score = 7;
+
+  repeated string top_reasons = 8;
+
+  // 结构化返回：方便后续解释、回放、监控
+  ResponseMeta meta = 9;
+
+  enum Decision {
+    APPROVE = 0;
+    REVIEW = 1;
+    REJECT = 2;
+    PENDING = 3;
+  }
+}
+
+message ResponseMeta {
+  // 哪些降级/回退策略被触发了
+  repeated string fallbacks_used = 1;
+
+  // 缺失摘要：哪些关键输入缺失
+  repeated string missing_inputs = 2;
+
+  // 调试信息（可选，线上可以开关）
+  map<string, string> debug = 3;
+}

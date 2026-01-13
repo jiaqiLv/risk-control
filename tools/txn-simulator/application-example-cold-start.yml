@@ -1,0 +1,22 @@
+# Example Configuration: Cold Start Testing
+# Use this to test system behavior with new users
+
+simulator:
+  mode: FIXED_QPS
+
+  rate-control:
+    qps: 100
+    concurrency: 20
+
+  cold-start:
+    enabled: true
+    ratio: 0.20  # 20% of transactions are from new users
+    user-key-fields:
+      - card1
+      - addr1
+
+  execution:
+    max-records: 5000
+
+  output:
+    path: "output/simulation-results-cold-start"

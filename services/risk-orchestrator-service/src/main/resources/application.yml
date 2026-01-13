@@ -1,0 +1,74 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: orchestrator-service
+
+orchestrator:
+  # Feature service URL
+  feature-service-url: http://localhost:8082
+  # Decision service URL
+  decision-service-url: http://localhost:8083
+  # Python inference service (gRPC)
+  python-inference-host: 10.60.38.173
+  python-inference-port: 49094
+
+  # Timeout settings (milliseconds)
+  feature-service-timeout-ms: 2000
+  decision-service-timeout-ms: 1000
+  python-inference-timeout-ms: 5000
+
+  # Orchestrator mode: HYBRID, RULES_ONLY, MODEL_ONLY
+  mode: HYBRID
+
+  # Enable fallback to rules when model fails
+  enable-fallback: true
+
+  # Risk score thresholds
+  review-threshold: 0.5
+  reject-threshold: 0.7
+
+  # Enable request/response logging
+  log-requests: true
+  log-responses: true
+
+  # Mock mode for standalone testing (without downstream services)
+  mock-mode: false
+
+# Spring Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      simple:
+        enabled: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.risk.orch: DEBUG
+    org.springframework.web: INFO
+    io.grpc: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/orchestrator-service.log
+    max-size: 100MB
+    max-history: 30
+
+# JSON serialization
+spring.jackson:
+  serialization:
+    write-dates-as-timestamps: true
+    indent-output: false
+  default-property-inclusion: non_null

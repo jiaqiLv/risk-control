@@ -1,0 +1,18 @@
+# Example Configuration: Fraud Only Testing
+# Use this to test model performance on fraud cases only
+
+simulator:
+  mode: SCENARIO
+
+  scenario:
+    type: FRAUD_ONLY  # Only process fraud transactions
+
+  rate-control:
+    qps: 50  # Lower QPS for focused testing
+    concurrency: 10
+
+  execution:
+    max-records: 1000  # Limit to first 1000 fraud cases
+
+  output:
+    path: "output/simulation-results-fraud-only"

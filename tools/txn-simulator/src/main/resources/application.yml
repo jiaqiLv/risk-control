@@ -1,0 +1,101 @@
+# Transaction Simulator Configuration
+
+server:
+  port: 8081  # Avoid conflict with target service on port 8080
+
+spring:
+  application:
+    name: txn-simulator
+
+simulator:
+  # CSV Data Source Configuration
+  csv:
+    transaction-path: "../../data/ieee-cis/test_transaction.csv"
+    identity-path: "../../data/ieee-cis/test_identity.csv"
+    encoding: "UTF-8"
+
+  # Target Service Configuration
+  target:
+    base-url: "http://localhost:8080"
+    endpoint: "/api/v1/transactions"
+    timeout-ms: 5000
+    # Target type: GATEWAY, TRANSACTION_SERVICE, RISK_ORCHESTRATOR, PYTHON_INFERENCE
+    type: GATEWAY
+
+  # Replay Mode: FIXED_QPS, REPLAY_DT, SCENARIO
+  mode: FIXED_QPS
+
+  # Rate Control for FIXED_QPS mode
+  rate-control:
+    qps: 200
+    concurrency: 32
+    max-in-flight: 100
+
+  # Time Replay Configuration for REPLAY_DT mode
+  time-replay:
+    speed-multiplier: 60.0  # 60x speed
+
+  # Scenario Sampling Configuration for SCENARIO mode
+  scenario:
+    # Options: ALL, FRAUD_ONLY, LEGIT_ONLY, COLD_START, HIGH_MISSING_RATE
+    type: ALL
+    cold-start-ratio: 0.05  # 5% new users
+    # Filter by ProductCD
+    product-cds: []
+    # Filter by specific missing features
+    missing-features: []
+
+  # Execution Configuration
+  execution:
+    max-records: -1  # -1 means all records
+    start-index: 0
+    batch-size: 1000
+
+  # Cold Start Simulation
+  cold-start:
+    enabled: true
+    ratio: 0.05  # 5% of transactions will use new user IDs
+    user-key-fields: ["card1", "addr1", "DeviceInfo"]
+
+  # Output Configuration
+  output:
+    path: "output/simulation-results"
+    format: "JSONL"  # CSV, JSONL, JSON
+    include-request: true
+    include-response: true
+    include-latency: true
+    # Fields to include in output. Empty list means all fields.
+    # Common fields: transactionId, isFraud, transactionAmt, productCd,
+    #               card1-6, addr1-2, dist1-2, deviceType, deviceInfo
+    # C fields: c1-c14, D fields: d1-d15, M fields: m1-m9, V fields: v1-v339
+    output-fields:
+      - "transactionId"
+      - "isFraud"
+      - "transactionAmt"
+      - "productCd"
+      - "card1"
+      - "card2"
+      - "card3"
+      - "card4"
+      - "card5"
+      - "card6"
+      - "addr1"
+      - "addr2"
+      - "dist1"
+      - "dist2"
+      - "deviceType"
+      - "deviceInfo"
+
+  # Metrics Configuration
+  metrics:
+    enabled: true
+    export-percentiles: "0.5,0.75,0.9,0.95,0.99"
+    histogram-precision: 3
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.risk.tools.sim: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

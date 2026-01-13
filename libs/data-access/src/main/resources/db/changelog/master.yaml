@@ -1,0 +1,323 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-transactions-table
+      author: jared
+      changes:
+        - createTable:
+            tableName: transactions
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: transaction_id
+                  type: VARCHAR(64)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: merchant_id
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_timestamp
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: NUMERIC(19,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: product_cd
+                  type: VARCHAR(10)
+              - column:
+                  name: decision
+                  type: VARCHAR(20)
+                  defaultValue: 'PENDING'
+              - column:
+                  name: risk_score
+                  type: DOUBLE PRECISION
+              - column:
+                  name: is_fraud
+                  type: BOOLEAN
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_transaction_id
+            columns:
+              - column:
+                  name: transaction_id
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_user_id
+            columns:
+              - column:
+                  name: user_id
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_event_timestamp
+            columns:
+              - column:
+                  name: event_timestamp
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_decision
+            columns:
+              - column:
+                  name: decision
+
+        - createIndex:
+            tableName: transactions
+            indexName: idx_created_at
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: create-transaction-attributes-table
+      author: jared
+      changes:
+        - createTable:
+            tableName: transaction_attributes
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: transaction_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_attributes_transaction
+                    references: transactions(transaction_id)
+                    deleteCascade: true
+              - column:
+                  name: card1
+                  type: INTEGER
+              - column:
+                  name: card2
+                  type: INTEGER
+              - column:
+                  name: card3
+                  type: VARCHAR(100)
+              - column:
+                  name: card4
+                  type: VARCHAR(100)
+              - column:
+                  name: card5
+                  type: INTEGER
+              - column:
+                  name: card6
+                  type: DOUBLE PRECISION
+              - column:
+                  name: addr1
+                  type: VARCHAR(100)
+              - column:
+                  name: addr2
+                  type: VARCHAR(100)
+              - column:
+                  name: dist1
+                  type: DOUBLE PRECISION
+              - column:
+                  name: dist2
+                  type: DOUBLE PRECISION
+              - column:
+                  name: P_emaildomain
+                  type: VARCHAR(255)
+              - column:
+                  name: R_emaildomain
+                  type: VARCHAR(255)
+              - column:
+                  name: extended_attributes
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+
+        - createIndex:
+            tableName: transaction_attributes
+            indexName: idx_attr_transaction_id
+            columns:
+              - column:
+                  name: transaction_id
+
+  - changeSet:
+      id: create-transaction-identity-table
+      author: jared
+      changes:
+        - createTable:
+            tableName: transaction_identity
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: transaction_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_identity_transaction
+                    references: transactions(transaction_id)
+                    deleteCascade: true
+              - column:
+                  name: id_01
+                  type: VARCHAR(100)
+              - column:
+                  name: id_02
+                  type: VARCHAR(100)
+              - column:
+                  name: id_03
+                  type: VARCHAR(100)
+              - column:
+                  name: id_04
+                  type: VARCHAR(100)
+              - column:
+                  name: id_05
+                  type: VARCHAR(100)
+              - column:
+                  name: id_06
+                  type: VARCHAR(100)
+              - column:
+                  name: id_07
+                  type: VARCHAR(100)
+              - column:
+                  name: id_08
+                  type: VARCHAR(100)
+              - column:
+                  name: id_09
+                  type: VARCHAR(100)
+              - column:
+                  name: id_10
+                  type: VARCHAR(100)
+              - column:
+                  name: id_11
+                  type: VARCHAR(100)
+              - column:
+                  name: id_12
+                  type: VARCHAR(100)
+              - column:
+                  name: id_13
+                  type: VARCHAR(100)
+              - column:
+                  name: id_14
+                  type: VARCHAR(100)
+              - column:
+                  name: id_15
+                  type: VARCHAR(100)
+              - column:
+                  name: id_16
+                  type: VARCHAR(100)
+              - column:
+                  name: id_17
+                  type: VARCHAR(100)
+              - column:
+                  name: id_18
+                  type: VARCHAR(100)
+              - column:
+                  name: id_19
+                  type: VARCHAR(100)
+              - column:
+                  name: id_20
+                  type: VARCHAR(100)
+              - column:
+                  name: id_21
+                  type: VARCHAR(100)
+              - column:
+                  name: id_22
+                  type: VARCHAR(100)
+              - column:
+                  name: device_type
+                  type: VARCHAR(50)
+              - column:
+                  name: device_info
+                  type: VARCHAR(200)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+
+        - createIndex:
+            tableName: transaction_identity
+            indexName: idx_identity_transaction_id
+            columns:
+              - column:
+                  name: transaction_id
+
+  - changeSet:
+      id: add-comments
+      author: jared
+      changes:
+        - sql:
+            sql: |
+              COMMENT ON TABLE transactions IS '交易主表，存储所有交易记录';
+              COMMENT ON COLUMN transactions.id IS '数据库主键（自增）';
+              COMMENT ON COLUMN transactions.transaction_id IS '交易ID（业务主键，唯一）';
+              COMMENT ON COLUMN transactions.user_id IS '用户ID';
+              COMMENT ON COLUMN transactions.merchant_id IS '商户ID';
+              COMMENT ON COLUMN transactions.event_timestamp IS '事件时间戳（毫秒）';
+              COMMENT ON COLUMN transactions.amount IS '交易金额';
+              COMMENT ON COLUMN transactions.product_cd IS '产品代码（如 W-World, C-Children）';
+              COMMENT ON COLUMN transactions.decision IS '风险决策结果（APPROVE, REVIEW, REJECT, PENDING）';
+              COMMENT ON COLUMN transactions.risk_score IS '风险评分（0.0-1.0）';
+              COMMENT ON COLUMN transactions.is_fraud IS '是否为欺诈交易（标签数据）';
+              COMMENT ON COLUMN transactions.created_at IS '记录创建时间';
+              COMMENT ON COLUMN transactions.updated_at IS '记录更新时间';
+
+              COMMENT ON TABLE transaction_attributes IS '交易属性表，存储交易特征数据';
+              COMMENT ON COLUMN transaction_attributes.transaction_id IS '关联的交易ID';
+              COMMENT ON COLUMN transaction_attributes.card1 IS '卡片信息1';
+              COMMENT ON COLUMN transaction_attributes.card2 IS '卡片信息2';
+              COMMENT ON COLUMN transaction_attributes.card3 IS '卡片信息3';
+              COMMENT ON COLUMN transaction_attributes.card4 IS '卡片信息4';
+              COMMENT ON COLUMN transaction_attributes.card5 IS '卡片信息5';
+              COMMENT ON COLUMN transaction_attributes.card6 IS '卡片信息6';
+              COMMENT ON COLUMN transaction_attributes.addr1 IS '地址信息1';
+              COMMENT ON COLUMN transaction_attributes.addr2 IS '地址信息2';
+              COMMENT ON COLUMN transaction_attributes.dist1 IS '距离信息1';
+              COMMENT ON COLUMN transaction_attributes.dist2 IS '距离信息2';
+              COMMENT ON COLUMN transaction_attributes.P_emaildomain IS '采购邮箱域名';
+              COMMENT ON COLUMN transaction_attributes.R_emaildomain IS '收货邮箱域名';
+              COMMENT ON COLUMN transaction_attributes.extended_attributes IS '扩展属性（JSON格式）';
+              COMMENT ON TABLE transaction_identity IS '交易身份信息表，存储 IEEE-CIS identity 数据';

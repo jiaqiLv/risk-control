@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+
+gateway:
+  # Base URL of the orchestrator service
+  orchestrator-base-url: http://localhost:8081
+  # Request timeout in milliseconds
+  timeout-ms: 5000
+  # Enable request/response logging
+  log-requests: true
+  log-responses: true
+
+# Spring Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      simple:
+        enabled: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.risk.gateway: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/gateway-service.log
+    max-size: 100MB
+    max-history: 30
+
+# JSON serialization
+spring.jackson:
+  serialization:
+    write-dates-as-timestamps: true
+    indent-output: false
+  default-property-inclusion: non_null

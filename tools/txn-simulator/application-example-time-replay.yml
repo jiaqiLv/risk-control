@@ -1,0 +1,17 @@
+# Example Configuration: Time-Based Replay
+# Use this to replay transactions with realistic timing
+
+simulator:
+  mode: REPLAY_DT
+
+  time-replay:
+    speed-multiplier: 60.0  # 60x speed (1 hour becomes 1 minute)
+
+  rate-control:
+    concurrency: 50  # Higher concurrency for replay mode
+
+  execution:
+    max-records: -1  # Process all records
+
+  output:
+    path: "output/simulation-results-time-replay"

@@ -1,0 +1,94 @@
+# ====================================================
+# Data Access Module - Database Configuration
+# ====================================================
+# 此配置文件包含所有数据库相关的配置
+# 使用此配置的服务需要通过 spring.config.import 引入
+# 例如: spring.config.import=classpath:application-data-access.yml
+
+# 数据源配置（JPA 使用）
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/riskcontrol
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # R2DBC 配置（响应式数据库访问，用于异步写入）
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/riskcontrol
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+      max-life-time: 1h
+      acquire-retry: 3
+
+  # JPA 配置（用于复杂查询）
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 使用 Liquibase 管理 schema，不使用 hibernate 自动建表
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        default_schema: public
+    open-in-view: false  # 避免懒加载问题
+
+  # Liquibase 配置（数据库迁移）
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/master.yaml
+    url: jdbc:postgresql://localhost:5432/riskcontrol
+    user: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    drop-first: false  # 是否先删除所有数据库对象（生产环境必须为 false）
+
+# 日志配置（开发环境可以开启 SQL 日志）
+logging:
+  level:
+    org.springframework.data.r2dbc: INFO
+    org.springframework.data.jpa: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    liquibase: INFO
+    com.risk.data: DEBUG
+
+# ====================================================
+# Docker PostgreSQL 连接示例
+# ====================================================
+# 如果使用 Docker 容器，可以：
+# 1. 使用 localhost:5432（如果端口已映射）
+# 2. 使用容器名替代 localhost:
+#    spring.r2dbc.url: r2dbc:postgresql://719c5bd933da:5432/riskcontrol
+#
+# 如果 Docker 容器在同一个网络中，可以直接使用容器名。
+# ====================================================
+
+# ====================================================
+# 连接池调优建议
+# ====================================================
+# 根据实际负载调整以下参数：
+#
+# 高并发场景（大量写入）:
+#   spring.r2dbc.pool.initial-size: 10
+#   spring.r2dbc.pool.max-size: 50
+#
+# 低并发场景（主要用于查询）:
+#   spring.r2dbc.pool.initial-size: 2
+#   spring.r2dbc.pool.max-size: 10
+#
+# 批量导入场景（临时提升性能）:
+#   spring.r2dbc.pool.initial-size: 20
+#   spring.r2dbc.pool.max-size: 100
+# ====================================================
