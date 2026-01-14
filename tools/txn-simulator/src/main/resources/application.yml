@@ -35,7 +35,7 @@ simulator:
     type: GATEWAY
 
   # Replay Mode: COMMON, FIXED_QPS, REPLAY_DT, SCENARIO, STREAMING
-  mode: REPLAY_DT
+  mode: SCENARIO
 
   # Rate Control for FIXED_QPS mode
   rate-control:

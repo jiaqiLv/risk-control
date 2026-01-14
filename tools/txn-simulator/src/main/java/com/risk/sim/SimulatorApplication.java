@@ -100,7 +100,12 @@ public class SimulatorApplication {
 
         // Step 3: Sample and filter records
         log.info("\nStep 3: Sampling and filtering records...");
-        List<TransactionRecord> sampledRecords = sampleAndFilterRecords(joinedRecords);
+        List<TransactionRecord> sampledRecords;
+        if (properties.getMode().name().equals("SCENARIO")) {
+            sampledRecords = sampleAndFilterRecords(joinedRecords);
+        } else {
+            sampledRecords = joinedRecords;
+        }
 
         // Step 4: Apply cold start simulation
         log.info("\nStep 4: Applying cold start simulation...");
@@ -160,19 +165,30 @@ public class SimulatorApplication {
         return joinedRecords;
     }
 
+    /**
+     * Sample and filter records for SCENARIO mode.
+     * This method applies scenario-based filtering and ProductCD filtering.
+     *
+     * @param records Transaction records to filter
+     * @return Filtered and sampled records
+     */
     private List<TransactionRecord> sampleAndFilterRecords(List<TransactionRecord> records) {
-        // Filter by scenario
+        // Step 1: Filter by scenario type (FRAUD_ONLY, LEGIT_ONLY, etc.)
         List<TransactionRecord> filtered = sampler.filterByScenario(records);
-        // Filter by ProductCD (ProductCD is now String type like "W", "H", "C", "S", "R")
+
+        // Step 2: Filter by ProductCD (ProductCD is String type like "W", "H", "C", "S", "R")
         List<String> productCds = new ArrayList<>(properties.getScenario().getProductCds());
         if (!productCds.isEmpty()) {
             filtered = sampler.filterByProductCd(filtered, productCds);
         }
-        // Sample
+
+        // Step 3: Apply sampling (startIndex, maxRecords)
         List<TransactionRecord> sampled = sampler.sample(filtered);
-        // Print statistics
+
+        // Step 4: Print statistics
         String stats = sampler.getStatistics(sampled);
         log.info("Record Statistics: {}", stats);
+
         return sampled;
     }
 
@@ -334,7 +350,21 @@ public class SimulatorApplication {
 
         // Step 3: Sample and filter records
         log.info("\nStep 3: Sampling and filtering records...");
-        List<TransactionRecord> sampledRecords = sampleAndFilterRecords(joinedRecords);
+        List<TransactionRecord> sampledRecords;
+
+        if (properties.getMode() == SimulatorProperties.Mode.SCENARIO) {
+            // SCENARIO mode: Apply scenario filtering + sampling
+            log.info("SCENARIO mode: Applying scenario filtering...");
+            sampledRecords = sampleAndFilterRecords(joinedRecords);
+        } else {
+            // Other modes: Apply sampling only (startIndex, maxRecords)
+            log.info("Non-SCENARIO mode: Applying sampling only (no scenario filtering)...");
+            sampledRecords = sampler.sample(joinedRecords);
+
+            // Print statistics
+            String stats = sampler.getStatistics(sampledRecords);
+            log.info("Record Statistics: {}", stats);
+        }
 
         // Step 4: Apply cold start simulation
         log.info("\nStep 4: Applying cold start simulation...");
