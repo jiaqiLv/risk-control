@@ -83,7 +83,7 @@ public class CsvTransactionReader {
 
         record.setTransactionId(getField(row, headerIndex, "TransactionID"));
         record.setFraud(parseBoolean(getField(row, headerIndex, "isFraud")));
-        record.setTransactionDt(parseDouble(getField(row, headerIndex, "TransactionDT")));
+        record.setTransactionDt(parseLong(getField(row, headerIndex, "TransactionDT")));
         record.setTransactionAmt(parseBigDecimal(getField(row, headerIndex, "TransactionAmt")));
         record.setProductCd(getString(getField(row, headerIndex, "ProductCD")));
 
@@ -126,6 +126,7 @@ public class CsvTransactionReader {
         for (int i = 1; i <= 339; i++) {
             setDoubleField(record, "v" + i, parseDouble(getField(row, headerIndex, "V" + i)));
         }
+        // log.info("record: {}", record);
         return record;
     }
 
@@ -146,6 +147,15 @@ public class CsvTransactionReader {
     //         return null;
     //     }
     // }
+
+    private Long parseLong(String value) {
+        if (value == null || value.isEmpty()) return null;
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 
     private Double parseDouble(String value) {
         if (value == null || value.isEmpty()) return null;

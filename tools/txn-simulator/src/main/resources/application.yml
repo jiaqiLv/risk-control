@@ -34,13 +34,13 @@ simulator:
     # Target type: GATEWAY, TRANSACTION_SERVICE, RISK_ORCHESTRATOR, PYTHON_INFERENCE
     type: GATEWAY
 
-  # Replay Mode: FIXED_QPS, REPLAY_DT, SCENARIO, STREAMING
+  # Replay Mode: COMMON, FIXED_QPS, REPLAY_DT, SCENARIO, STREAMING
   mode: FIXED_QPS
 
   # Rate Control for FIXED_QPS mode
   rate-control:
-    qps: 200
-    concurrency: 32
+    qps: 5
+    concurrency: 1
     max-in-flight: 100
 
   # Time Replay Configuration for REPLAY_DT mode

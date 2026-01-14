@@ -32,7 +32,7 @@ public class FeatureEncoder {
 
         // TransactionDT (normalized to hours)
         if (record.getTransactionDt() != null) {
-            double dtHours = record.getTransactionDt() / 3600.0;
+            double dtHours = (double)(record.getTransactionDt()) / 3600.0;
             features.put("TransactionDT_hours", dtHours);
         }
 

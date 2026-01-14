@@ -30,7 +30,7 @@ public class TransactionRecord {
     private boolean isFraud;
 
     // Transaction fields
-    private Double transactionDt;
+    private Long transactionDt;
     private BigDecimal transactionAmt;
     private String productCd;  // (e.g., "W", "H", "C", "S", "R")
 

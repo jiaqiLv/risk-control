@@ -63,7 +63,7 @@ public class RequestMapper {
         requestBody.put("transactionId", record.getTransactionId());
         requestBody.put("userId", generateUserId(record));
         requestBody.put("eventTimestamp", record.getTransactionDt() != null
-                ? record.getTransactionDt() * 1000L : System.currentTimeMillis());
+                ? record.getTransactionDt() * 1000 : System.currentTimeMillis());
 
         // Amount
         requestBody.put("amount", record.getTransactionAmt() != null
@@ -123,7 +123,7 @@ public class RequestMapper {
                 .setTransactionId(record.getTransactionId())
                 .setUserId(generateUserId(record))
                 .setEventTimestampMs(record.getTransactionDt() != null
-                        ? record.getTransactionDt() * 1000L : System.currentTimeMillis())
+                        ? record.getTransactionDt() * 1000 : System.currentTimeMillis())
                 .setAmount(record.getTransactionAmt() != null
                         ? record.getTransactionAmt().doubleValue() : 0.0)
                 .setCurrency("USD");

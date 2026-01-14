@@ -24,6 +24,7 @@ public class SimulatorProperties {
 
 
     public enum Mode {
+        COMMON,
         FIXED_QPS,
         REPLAY_DT,
         SCENARIO,

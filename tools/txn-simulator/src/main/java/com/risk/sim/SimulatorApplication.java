@@ -10,6 +10,7 @@ import com.risk.sim.mapping.RequestMapper;
 import com.risk.sim.metrics.LatencyRecorder;
 import com.risk.sim.metrics.ResultSink;
 import com.risk.sim.source.*;
+import com.risk.sim.runner.ReplayEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -43,6 +44,7 @@ public class SimulatorApplication {
     private final LatencyRecorder latencyRecorder;
     private final ResultSink resultSink;
     private final OfflineEvaluator offlineEvaluator;
+    private final ReplayEngine replayEngine;
 
     public static void main(String[] args) {
         SpringApplication.run(SimulatorApplication.class, args);
@@ -53,17 +55,21 @@ public class SimulatorApplication {
         return args -> {
             log.info("========================================");
             log.info("  Transaction Simulator Starting...");
+            log.info("  Mode: {}", properties.getMode());
             log.info("========================================");
             try {
                 int successCount;
-                if ("STREAMING".equals(properties.getMode().name())) {
-                    successCount = executeSimulationStreaming();
+
+                if (properties.getMode() == SimulatorProperties.Mode.STREAMING) {
+                    // STREAMING mode - use ReplayEngine which handles everything
+                    successCount = replayEngine.replay(null, null);
                 } else {
-                    // Non-streaming mode
-                    successCount = executeSimulation();
+                    // Other modes - load data first, then use ReplayEngine
+                    successCount = executeSimulationWithReplayEngine();
                 }
-                // Step 8: Generate reports
-                log.info("\nStep 8: Generating reports...");
+
+                // Generate reports
+                log.info("\nGenerating reports...");
                 generateReports();
                 log.info("\n========================================");
                 log.info("  Simulation Completed Successfully!");
@@ -171,9 +177,6 @@ public class SimulatorApplication {
     }
 
     private void applyColdStart(List<TransactionRecord> records) {
-        if (!properties.getColdStart().isEnabled()) {
-            return;
-        }
 
         double ratio = properties.getColdStart().getRatio();
         int coldStartCount = (int) (records.size() * ratio);
@@ -310,6 +313,90 @@ public class SimulatorApplication {
         }
 
         return successCount;
+    }
+
+    /**
+     * Execute simulation using ReplayEngine.
+     * This method loads data, initializes clients, creates sender function,
+     * and delegates to ReplayEngine for actual replay execution.
+     */
+    private int executeSimulationWithReplayEngine() throws Exception {
+        // Step 1: Load CSV data
+        log.info("Step 1: Loading CSV data...");
+        Map<String, TransactionRecord> transactions = loadTransactionData();
+        Map<String, TransactionRecord> identities = loadIdentityData();
+        log.info("Sample Transaction Record: {}", transactions.values().stream().findFirst().orElse(null));
+        log.info("Sample Identity Record: {}", identities.values().stream().findFirst().orElse(null));
+
+        // Step 2: Join transaction and identity data
+        log.info("\nStep 2: Joining transaction and identity data...");
+        List<TransactionRecord> joinedRecords = joinData(transactions, identities);
+
+        // Step 3: Sample and filter records
+        log.info("\nStep 3: Sampling and filtering records...");
+        List<TransactionRecord> sampledRecords = sampleAndFilterRecords(joinedRecords);
+
+        // Step 4: Apply cold start simulation
+        log.info("\nStep 4: Applying cold start simulation...");
+        if (properties.getColdStart().isEnabled()) {
+            applyColdStart(sampledRecords); // TODO: 完成冷启动逻辑
+        }
+
+        // Step 5: Initialize clients
+        log.info("\nStep 5: Initializing clients...");
+        initializeClients();
+
+        // Step 6: Initialize result sink
+        log.info("\nStep 6: Initializing result sink...");
+        resultSink.initialize();
+
+        // Step 7: Create sender function based on target type
+        log.info("\nStep 7: Creating sender function...");
+        java.util.function.Function<TransactionRecord, SimulationResponse> senderFunc;
+
+        if (properties.getTarget().getType() == SimulatorProperties.TargetType.GATEWAY ||
+            properties.getTarget().getType() == SimulatorProperties.TargetType.TRANSACTION_SERVICE) {
+
+            senderFunc = record -> {
+                try {
+                    Map<String, Object> request = requestMapper.mapToHttpRequest(record);
+                    return httpClientSender.send(request);
+                } catch (Exception e) {
+                    log.error("Failed to send request for transaction: {}", record.getTransactionId(), e);
+                    return SimulationResponse.builder()
+                            .success(false)
+                            .latencyMs(0)
+                            .statusCode(-1)
+                            .errorMessage(e.getMessage())
+                            .build();
+                }
+            };
+
+        } else if (properties.getTarget().getType() == SimulatorProperties.TargetType.PYTHON_INFERENCE) {
+
+            senderFunc = record -> {
+                try {
+                    var request = requestMapper.mapToGrpcRequest(record);
+                    return grpcClientSender.send(request);
+                } catch (Exception e) {
+                    log.error("Failed to send gRPC request for transaction: {}", record.getTransactionId(), e);
+                    return SimulationResponse.builder()
+                            .success(false)
+                            .latencyMs(0)
+                            .statusCode(-1)
+                            .errorMessage(e.getMessage())
+                            .build();
+                }
+            };
+
+        } else {
+            log.error("Unknown target type: {}", properties.getTarget().getType());
+            return 0;
+        }
+
+        // Step 8: Execute replay using ReplayEngine
+        log.info("\nStep 8: Executing replay with ReplayEngine in {} mode...", properties.getMode());
+        return replayEngine.replay(sampledRecords, senderFunc);
     }
 
     private void generateReports() {
