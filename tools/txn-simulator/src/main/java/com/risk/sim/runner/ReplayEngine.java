@@ -175,6 +175,16 @@ public class ReplayEngine {
 
         AtomicInteger successCount = new AtomicInteger(0);
         double speedMultiplier = properties.getTimeReplay().getSpeedMultiplier();
+        boolean preserveOrder = properties.getTimeReplay().isPreserveOrder();
+
+        // If preserveOrder is true, execute synchronously (no thread pool)
+        if (preserveOrder) {
+            log.info("REPLAY_DT mode: Synchronous execution to preserve exact order");
+            return replayByTransactionDtSync(records, senderFunc, speedMultiplier);
+        }
+
+        // Otherwise, use async execution with concurrency control
+        log.info("REPLAY_DT mode: Asynchronous execution with concurrency");
         int maxInFlight = properties.getRateControl().getMaxInFlight();
         Semaphore semaphore = new Semaphore(maxInFlight);
 
@@ -184,8 +194,14 @@ public class ReplayEngine {
             try {
                 // Calculate delay based on TransactionDT
                 if (prevDt != null && record.getTransactionDt() != null) {
+                    if (record.getTransactionDt() < prevDt) {
+                        log.warn("Non-monotonic TransactionDT detected: prevDt={}, currentDt={}",
+                                prevDt, record.getTransactionDt());
+                    }
+                    log.debug("Transaction {} dt: {}, previous dt: {}",
+                            record.getTransactionId(), record.getTransactionDt(), prevDt);
                     long dtDiff = record.getTransactionDt() - prevDt;
-                    long delayMs = (long) ((dtDiff * 1000) / speedMultiplier);
+                    long delayMs = (long) ((dtDiff) / speedMultiplier);
 
                     if (delayMs > 0) {
                         Thread.sleep(delayMs);
@@ -227,6 +243,60 @@ public class ReplayEngine {
         waitForCompletion();
 
         return successCount.get();
+    }
+
+    /**
+     * Replay by TransactionDT in synchronous mode.
+     * Requests are sent sequentially with exact timing, preserving order.
+     */
+    private int replayByTransactionDtSync(
+            List<TransactionRecord> records,
+            Function<TransactionRecord, SimulationResponse> senderFunc,
+            double speedMultiplier) {
+
+        int successCount = 0;
+        Long prevDt = null;
+
+        for (TransactionRecord record : records) {
+            try {
+                // Calculate delay based on TransactionDT
+                if (prevDt != null && record.getTransactionDt() != null) {
+                    if (record.getTransactionDt() < prevDt) {
+                        log.warn("Non-monotonic TransactionDT detected: prevDt={}, currentDt={}",
+                                prevDt, record.getTransactionDt());
+                    }
+                    long dtDiff = record.getTransactionDt() - prevDt;
+                    long delayMs = (long) ((dtDiff) / speedMultiplier);
+                    
+                    if (delayMs > 0) {
+                        log.info("Delaying {} ms before transaction {}", delayMs, record.getTransactionId());
+                        Thread.sleep(delayMs);
+                    }
+                }
+
+                prevDt = record.getTransactionDt();
+
+                // Execute synchronously
+                SimulationResponse response = senderFunc.apply(record);
+
+                // Record metrics
+                latencyRecorder.record(response.getLatencyMs());
+                resultSink.write(record, response);
+
+                if (response.isSuccess()) {
+                    successCount++;
+                }
+
+            } catch (InterruptedException e) {
+                log.error("Replay interrupted", e);
+                Thread.currentThread().interrupt();
+                break;
+            } catch (Exception e) {
+                log.error("Error processing transaction: {}", record.getTransactionId(), e);
+            }
+        }
+
+        return successCount;
     }
 
     /**

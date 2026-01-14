@@ -68,6 +68,7 @@ public class SimulatorProperties {
     @Data
     public static class TimeReplay {
         private double speedMultiplier;
+        private boolean preserveOrder = false;  // If true, execute synchronously to preserve exact order
     }
 
     @Data

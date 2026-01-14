@@ -35,17 +35,18 @@ simulator:
     type: GATEWAY
 
   # Replay Mode: COMMON, FIXED_QPS, REPLAY_DT, SCENARIO, STREAMING
-  mode: FIXED_QPS
+  mode: REPLAY_DT
 
   # Rate Control for FIXED_QPS mode
   rate-control:
-    qps: 5
-    concurrency: 1
+    qps: 50
+    concurrency: 10
     max-in-flight: 100
 
   # Time Replay Configuration for REPLAY_DT mode
   time-replay:
     speed-multiplier: 60.0  # 60x speed
+    preserve-order: true
 
   # Scenario Sampling Configuration for SCENARIO mode
   scenario:

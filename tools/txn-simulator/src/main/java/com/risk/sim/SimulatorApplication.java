@@ -342,6 +342,19 @@ public class SimulatorApplication {
             applyColdStart(sampledRecords); // TODO: 完成冷启动逻辑
         }
 
+        // Step 4.5: Sort by transactionDt for REPLAY_DT mode
+        if (properties.getMode() == SimulatorProperties.Mode.REPLAY_DT) {
+            log.info("\nStep 4.5: Sorting records by TransactionDt for REPLAY_DT mode...");
+            sampledRecords.sort(java.util.Comparator.comparing(TransactionRecord::getTransactionDt));
+            log.info("Sorted {} records by TransactionDt", sampledRecords.size());
+            // Log first and last transaction timestamps
+            if (!sampledRecords.isEmpty()) {
+                log.info("Time range: {} to {}",
+                        sampledRecords.get(0).getTransactionDt(),
+                        sampledRecords.get(sampledRecords.size() - 1).getTransactionDt());
+            }
+        }
+
         // Step 5: Initialize clients
         log.info("\nStep 5: Initializing clients...");
         initializeClients();
