@@ -42,7 +42,7 @@ public class ReplayEngine {
             List<TransactionRecord> records,
             Function<TransactionRecord, SimulationResponse> senderFunc) {
 
-        String mode = properties.getMode();
+        String mode = properties.getMode().name();
         log.info("Starting replay in {} mode with {} records", mode, records.size());
 
         // Initialize rate limiter for FIXED_QPS mode

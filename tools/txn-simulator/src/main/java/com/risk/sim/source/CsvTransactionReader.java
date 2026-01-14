@@ -2,23 +2,32 @@ package com.risk.sim.source;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import com.risk.sim.config.SimulatorProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Reader for train_transaction.csv from IEEE-CIS dataset.
- */
+
 @Slf4j
 @Component
 public class CsvTransactionReader {
 
+    private final SimulatorProperties simulatorProperties;
     private final Map<String, TransactionRecord> records = new HashMap<>();
+
+    public CsvTransactionReader(SimulatorProperties simulatorProperties) {
+        this.simulatorProperties = simulatorProperties;
+    }
 
     /**
      * Read transaction CSV file and parse records.
@@ -39,19 +48,22 @@ public class CsvTransactionReader {
             // Create header index map for efficient lookup
             Map<String, Integer> headerIndex = new HashMap<>();
             for (int i = 0; i < header.length; i++) {
+                // Store both original and lowercase version for flexible lookup
                 headerIndex.put(header[i], i);
+                headerIndex.put(header[i].toLowerCase(), i); // for case-insensitive access
             }
 
             String[] row;
             int count = 0;
-            // TODO: 临时限制读取 100 行用于测试，生产环境需移除此限制
-            int maxRows = 100;
-            log.info("Header index: {}", headerIndex);
-            while ((row = reader.readNext()) != null && count < maxRows) {
+            double sampleRate = simulatorProperties.getCsv().getDataSampleRate();
+            log.info("Reading CSV with sample rate: {} ({}%)", sampleRate, sampleRate * 100);
+            while ((row = reader.readNext()) != null) {
+                // Apply data sampling based on configured rate
+                if (ThreadLocalRandom.current().nextDouble() > sampleRate) {
+                    continue;  // Skip this row based on sampling rate
+                }
                 try {
-                    log.info("Reading row {}: {}", count, Arrays.toString(row));
                     TransactionRecord record = parseTransactionRow(row, headerIndex);
-                    log.info("Parsed transaction record: {}", record);
                     if (record != null && record.getTransactionId() != null) {
                         records.put(record.getTransactionId(), record);
                         count++;
@@ -60,7 +72,6 @@ public class CsvTransactionReader {
                     log.warn("Failed to parse row {}: {}", count, e.getMessage());
                 }
             }
-
             log.info("Successfully loaded {} transaction records", count);
         }
 
@@ -72,7 +83,7 @@ public class CsvTransactionReader {
 
         record.setTransactionId(getField(row, headerIndex, "TransactionID"));
         record.setFraud(parseBoolean(getField(row, headerIndex, "isFraud")));
-        record.setTransactionDt(parseInteger(getField(row, headerIndex, "TransactionDT")));
+        record.setTransactionDt(parseDouble(getField(row, headerIndex, "TransactionDT")));
         record.setTransactionAmt(parseBigDecimal(getField(row, headerIndex, "TransactionAmt")));
         record.setProductCd(getString(getField(row, headerIndex, "ProductCD")));
 
@@ -81,16 +92,16 @@ public class CsvTransactionReader {
         record.setREmailDomain(getField(row, headerIndex, "R_emaildomain"));
 
         // Card fields
-        record.setCard1(parseInteger(getField(row, headerIndex, "card1")));
-        record.setCard2(parseInteger(getField(row, headerIndex, "card2")));
-        record.setCard3(parseInteger(getField(row, headerIndex, "card3")));
-        record.setCard4(getString(getField(row, headerIndex, "card4")));
-        record.setCard5(parseInteger(getField(row, headerIndex, "card5")));
-        record.setCard6(parseInteger(getField(row, headerIndex, "card6")));
+        record.setCard1(parseDouble(getField(row, headerIndex, "card1")));
+        record.setCard2(parseDouble(getField(row, headerIndex, "card2")));
+        record.setCard3(parseDouble(getField(row, headerIndex, "card3")));
+        record.setCard4(getField(row, headerIndex, "card4"));
+        record.setCard5(parseDouble(getField(row, headerIndex, "card5")));
+        record.setCard6(getField(row, headerIndex, "card6"));
 
         // Address fields
-        record.setAddr1(parseInteger(getField(row, headerIndex, "addr1")));
-        record.setAddr2(parseInteger(getField(row, headerIndex, "addr2")));
+        record.setAddr1(parseDouble(getField(row, headerIndex, "addr1")));
+        record.setAddr2(parseDouble(getField(row, headerIndex, "addr2")));
 
         // Distance fields
         record.setDist1(parseDouble(getField(row, headerIndex, "dist1")));
@@ -98,7 +109,7 @@ public class CsvTransactionReader {
 
         // C fields (count of something)
         for (int i = 1; i <= 14; i++) {
-            setIntField(record, "c" + i, parseInteger(getField(row, headerIndex, "C" + i)));
+            setDoubleField(record, "c" + i, parseDouble(getField(row, headerIndex, "C" + i)));
         }
 
         // D fields (date/time delta)
@@ -111,11 +122,10 @@ public class CsvTransactionReader {
             setStringField(record, "m" + i, getString(getField(row, headerIndex, "M" + i)));
         }
 
-        // V fields (Vesta engineered features)
+        // V fields (Vesta engineered features)Y
         for (int i = 1; i <= 339; i++) {
-            setIntField(record, "v" + i, parseInteger(getField(row, headerIndex, "V" + i)));
+            setDoubleField(record, "v" + i, parseDouble(getField(row, headerIndex, "V" + i)));
         }
-
         return record;
     }
 
@@ -128,14 +138,14 @@ public class CsvTransactionReader {
         return (value == null || value.isEmpty()) ? null : value;
     }
 
-    private Integer parseInteger(String value) {
-        if (value == null || value.isEmpty()) return null;
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
+    // private Integer parseInteger(String value) {
+    //     if (value == null || value.isEmpty()) return null;
+    //     try {
+    //         return Integer.parseInt(value);
+    //     } catch (NumberFormatException e) {
+    //         return null;
+    //     }
+    // }
 
     private Double parseDouble(String value) {
         if (value == null || value.isEmpty()) return null;
@@ -176,16 +186,16 @@ public class CsvTransactionReader {
         }
     }
 
-    private void setIntField(TransactionRecord record, String fieldName, Integer value) {
-        try {
-            Field field = TransactionRecord.FIELD_CACHE.get(fieldName.toLowerCase());
-            if (field != null) {
-                field.set(record, value);
-            }
-        } catch (IllegalAccessException e) {
-            log.warn("Failed to set int field {}: {}", fieldName, e.getMessage());
-        }
-    }
+    // private void setIntField(TransactionRecord record, String fieldName, Integer value) {
+    //     try {
+    //         Field field = TransactionRecord.FIELD_CACHE.get(fieldName.toLowerCase());
+    //         if (field != null) {
+    //             field.set(record, value);
+    //         }
+    //     } catch (IllegalAccessException e) {
+    //         log.warn("Failed to set int field {}: {}", fieldName, e.getMessage());
+    //     }
+    // }
 
     private void setDoubleField(TransactionRecord record, String fieldName, Double value) {
         try {
@@ -204,5 +214,109 @@ public class CsvTransactionReader {
 
     public Collection<TransactionRecord> getAllRecords() {
         return records.values();
+    }
+
+    /**
+     * Stream transaction records from CSV file asynchronously.
+     * Records are emitted as they are read, enabling streaming processing.
+     *
+     * @param filePath Path to the CSV file
+     * @return Flux of TransactionRecord
+     */
+    public Flux<TransactionRecord> readTransactionsStream(String filePath) {
+        Sinks.Many<TransactionRecord> sink = Sinks.many().multicast().onBackpressureBuffer();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, "csv-reader-thread");
+            thread.setDaemon(false);
+            return thread;
+        });
+
+        executor.submit(() -> {
+            log.info("Starting to stream transaction CSV from: {}", filePath);
+            try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+                String[] header = reader.readNext();
+                if (header == null) {
+                    log.error("Empty CSV file");
+                    sink.tryEmitComplete();
+                    return;
+                }
+
+                // Create header index map for efficient lookup (case-insensitive)
+                Map<String, Integer> headerIndex = new HashMap<>();
+                for (int i = 0; i < header.length; i++) {
+                    // Store both original and lowercase version for flexible lookup
+                    headerIndex.put(header[i], i);
+                    headerIndex.put(header[i].toLowerCase(), i);
+                }
+                log.info("Header index: {}", headerIndex);
+
+                String[] row;
+                int count = 0;
+                int batchSize = 1000;
+                double sampleRate = simulatorProperties.getCsv().getDataSampleRate();
+                log.info("Streaming CSV with sample rate: {} ({}%)", sampleRate, sampleRate * 100);
+
+                while ((row = reader.readNext()) != null) {
+                    // Apply data sampling based on configured rate
+                    if (ThreadLocalRandom.current().nextDouble() > sampleRate) {
+                        continue;  // Skip this row based on sampling rate
+                    }
+
+                    try {
+                        TransactionRecord record = parseTransactionRow(row, headerIndex);
+                        if (record != null && record.getTransactionId() != null) {
+                            sink.tryEmitNext(record);
+                            count++;
+
+                            // Log progress every batch
+                            if (count % batchSize == 0) {
+                                log.info("Streamed {} records so far...", count);
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse row {}: {}", count, e.getMessage());
+                    }
+                }
+
+                log.info("Finished streaming {} transaction records", count);
+                sink.tryEmitComplete();
+
+            } catch (Exception e) {
+                log.error("Error streaming CSV", e);
+                sink.tryEmitError(e);
+            } finally {
+                executor.shutdown();
+            }
+        });
+
+        return sink.asFlux();
+    }
+
+    /**
+     * Stream transaction records from CSV file asynchronously with identity join.
+     *
+     * @param filePath    Path to the transaction CSV file
+     * @param identityMap Map of identity data (can be empty)
+     * @return Flux of TransactionRecord
+     */
+    public Flux<TransactionRecord> readTransactionsStreamWithJoin(
+            String filePath,
+            Map<String, TransactionRecord> identityMap) {
+
+        return readTransactionsStream(filePath)
+                .map(transaction -> {
+                    // Join with identity data if available
+                    if (identityMap != null && !identityMap.isEmpty()) {
+                        TransactionRecord identity = identityMap.get(transaction.getTransactionId());
+                        if (identity != null) {
+                            // Merge identity fields into transaction record
+                            transaction.setDeviceType(identity.getDeviceType());
+                            transaction.setDeviceInfo(identity.getDeviceInfo());
+                            // Add other identity fields as needed
+                        }
+                    }
+                    return transaction;
+                });
     }
 }

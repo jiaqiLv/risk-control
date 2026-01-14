@@ -6,13 +6,25 @@ server:
 spring:
   application:
     name: txn-simulator
+  
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
 
 simulator:
+
   # CSV Data Source Configuration
   csv:
     transaction-path: "../../data/ieee-cis/test_transaction.csv"
     identity-path: "../../data/ieee-cis/test_identity.csv"
     encoding: "UTF-8"
+    data-sample-rate: 0.001  # Read 1% of data for testing (0.0-1.0, set to 1.0 for production)
+
+  kafka:
+    topic: txn.raw
 
   # Target Service Configuration
   target:
@@ -22,7 +34,7 @@ simulator:
     # Target type: GATEWAY, TRANSACTION_SERVICE, RISK_ORCHESTRATOR, PYTHON_INFERENCE
     type: GATEWAY
 
-  # Replay Mode: FIXED_QPS, REPLAY_DT, SCENARIO
+  # Replay Mode: FIXED_QPS, REPLAY_DT, SCENARIO, STREAMING
   mode: FIXED_QPS
 
   # Rate Control for FIXED_QPS mode
@@ -53,7 +65,7 @@ simulator:
 
   # Cold Start Simulation
   cold-start:
-    enabled: true
+    enabled: false
     ratio: 0.05  # 5% of transactions will use new user IDs
     user-key-fields: ["card1", "addr1", "DeviceInfo"]
 

@@ -13,7 +13,7 @@ public class SimulatorProperties {
 
     private Csv csv = new Csv();
     private Target target = new Target();
-    private String mode = "FIXED_QPS";
+    private Mode mode;
     private RateControl rateControl = new RateControl();
     private TimeReplay timeReplay = new TimeReplay();
     private Scenario scenario = new Scenario();
@@ -22,18 +22,31 @@ public class SimulatorProperties {
     private Output output = new Output();
     private Metrics metrics = new Metrics();
 
-    @Data
-    public static class Csv {
-        private String transactionPath = "data/ieee-cis/train_transaction.csv";
-        private String identityPath = "data/ieee-cis/train_identity.csv";
-        private String encoding = "UTF-8";
+
+    public enum Mode {
+        FIXED_QPS,
+        REPLAY_DT,
+        SCENARIO,
+        STREAMING
     }
 
+    /*
+     CSV Data Source Configuration
+     */
+    @Data
+    public static class Csv {
+        private String transactionPath;
+        private String identityPath;
+        private String encoding;
+        private double dataSampleRate = 1.0;  // 0.0-1.0, 1.0 means read all data
+    }
+
+    /* Target Service Configuration */
     @Data
     public static class Target {
-        private String baseUrl = "http://localhost:8080";
-        private String endpoint = "/api/v1/transactions";
-        private int timeoutMs = 5000;
+        private String baseUrl;
+        private String endpoint;
+        private int timeoutMs;
         private TargetType type = TargetType.GATEWAY;
     }
 
@@ -46,22 +59,22 @@ public class SimulatorProperties {
 
     @Data
     public static class RateControl {
-        private int qps = 200;
-        private int concurrency = 32;
-        private int maxInFlight = 100;
+        private int qps;
+        private int concurrency;
+        private int maxInFlight;
     }
 
     @Data
     public static class TimeReplay {
-        private double speedMultiplier = 60.0;
+        private double speedMultiplier;
     }
 
     @Data
     public static class Scenario {
-        private ScenarioType type = ScenarioType.ALL;
-        private double coldStartRatio = 0.05;
-        private List<String> productCds = List.of();
-        private List<String> missingFeatures = List.of();
+        private ScenarioType type;
+        private double coldStartRatio;
+        private List<String> productCds;
+        private List<String> missingFeatures;
     }
 
     public enum ScenarioType {
@@ -74,38 +87,32 @@ public class SimulatorProperties {
 
     @Data
     public static class Execution {
-        private long maxRecords = -1;
-        private int startIndex = 0;
-        private int batchSize = 1000;
+        private long maxRecords;
+        private int startIndex;
+        private int batchSize;
     }
 
     @Data
     public static class ColdStart {
-        private boolean enabled = true;
-        private double ratio = 0.05;
-        private List<String> userKeyFields = List.of("card1", "addr1", "DeviceInfo");
+        private boolean enabled;
+        private double ratio;
+        private List<String> userKeyFields;
     }
 
     @Data
     public static class Output {
-        private String path = "output/simulation-results";
-        private String format = "JSONL";
-        private boolean includeRequest = true;
-        private boolean includeResponse = true;
-        private boolean includeLatency = true;
-        private List<String> outputFields = null;
-        // private List<String> outputFields = List.of(
-        //     "transactionId", "isFraud",
-        //     "transactionAmt", "productCd", "card1", "card2", "card3", "card4", "card5", "card6",
-        //     "addr1", "addr2", "dist1", "dist2",
-        //     "deviceType", "deviceInfo"
-        // );
+        private String path;
+        private String format;
+        private boolean includeRequest;
+        private boolean includeResponse;
+        private boolean includeLatency;
+        private List<String> outputFields;
     }
 
     @Data
     public static class Metrics {
-        private boolean enabled = true;
-        private String exportPercentiles = "0.5,0.75,0.9,0.95,0.99";
-        private int histogramPrecision = 3;
+        private boolean enabled;
+        private String exportPercentiles;
+        private int histogramPrecision;
     }
 }

@@ -168,7 +168,7 @@ public class RecordSampler {
                 ));
 
         return String.format(
-                "Record Statistics: Total=%d, Fraud=%d (%.2f%%), Legit=%d, ProductCD distribution=%s",
+                "Total=%d, Fraud=%d (%.2f%%), Legit=%d, ProductCD distribution=%s",
                 total, fraudCount, fraudRate, legitCount, countByProductCd
         );
     }

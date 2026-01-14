@@ -2,12 +2,14 @@ package com.risk.sim.source;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import com.risk.sim.config.SimulatorProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Reader for train_identity.csv from IEEE-CIS dataset.
@@ -16,7 +18,12 @@ import java.util.*;
 @Component
 public class CsvIdentityReader {
 
+    private final SimulatorProperties simulatorProperties;
     private final Map<String, TransactionRecord> identityRecords = new HashMap<>();
+
+    public CsvIdentityReader(SimulatorProperties simulatorProperties) {
+        this.simulatorProperties = simulatorProperties;
+    }
 
     /**
      * Read identity CSV file and parse records.
@@ -42,9 +49,12 @@ public class CsvIdentityReader {
 
             String[] row;
             int count = 0;
-            // TODO: 临时限制读取 100 行用于测试，生产环境需移除此限制
-            int maxRows = 100;
-            while ((row = reader.readNext()) != null && count < maxRows) {
+            double sampleRate = simulatorProperties.getCsv().getDataSampleRate();
+            while ((row = reader.readNext()) != null) {
+                // Apply data sampling based on configured rate
+                if (ThreadLocalRandom.current().nextDouble() > sampleRate) {
+                    continue;  // Skip this row based on sampling rate
+                }
                 try {
                     TransactionRecord record = parseIdentityRow(row, headerIndex);
                     if (record != null && record.getTransactionId() != null) {
@@ -75,7 +85,7 @@ public class CsvIdentityReader {
         }
 
         // Device
-        record.setDeviceType(parseInteger(getField(row, headerIndex, "DeviceType")));
+        record.setDeviceType(parseDouble(getField(row, headerIndex, "DeviceType")));
         record.setDeviceInfo(getField(row, headerIndex, "DeviceInfo"));
 
         return record;
@@ -90,10 +100,10 @@ public class CsvIdentityReader {
         return (value == null || value.isEmpty()) ? null : value;
     }
 
-    private Integer parseInteger(String value) {
+    private Double parseDouble(String value) {
         if (value == null || value.isEmpty()) return null;
         try {
-            return Integer.parseInt(value);
+            return Double.parseDouble(value);
         } catch (NumberFormatException e) {
             return null;
         }
