@@ -66,7 +66,7 @@ public class RequestMapper {
                 ? record.getTransactionDt() * 1000 : System.currentTimeMillis());
 
         // Amount
-        requestBody.put("amount", record.getTransactionAmt() != null
+        requestBody.put("transactionAmt", record.getTransactionAmt() != null
                 ? record.getTransactionAmt() : 0.0);
 
         // Product and channel
@@ -190,13 +190,13 @@ public class RequestMapper {
         return builder.build();
     }
 
-    private void putFeatureValue(Map<String, FeatureValue> attributes, String key, Integer value) {
-        if (value != null) {
-            attributes.put(key, FeatureValue.newBuilder()
-                    .setI64(value.longValue())
-                    .build());
-        }
-    }
+    // private void putFeatureValue(Map<String, FeatureValue> attributes, String key, Integer value) {
+    //     if (value != null) {
+    //         attributes.put(key, FeatureValue.newBuilder()
+    //                 .setI64(value.longValue())
+    //                 .build());
+    //     }
+    // }
 
     private void putFeatureValue(Map<String, FeatureValue> attributes, String key, Double value) {
         if (value != null) {

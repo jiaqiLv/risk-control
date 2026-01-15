@@ -10,7 +10,6 @@
 ### 2. 核心功能实现
 - ✅ REST API 控制器（`GatewayController`）
   - POST `/api/v1/transactions` - 交易评估接口
-  - POST `/api/v1/transactions/batch` - 批量评估接口（待实现）
   - GET `/api/v1/health` - 健康检查
   - GET `/api/v1/info` - 服务信息
 

@@ -69,6 +69,21 @@
             <artifactId>contracts</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- Sentinel for rate limiting and circuit breaking -->
+        <!-- Compatible with Spring Boot 3.2.2 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+            <version>2022.0.0.0</version>
+        </dependency>
+
+        <!-- Sentinel DataSource for Nacos (optional, for persistence) -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-nacos</artifactId>
+            <version>1.8.6</version>
+        </dependency>
     </dependencies>
 
     <build>

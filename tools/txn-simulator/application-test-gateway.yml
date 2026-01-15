@@ -1,0 +1,41 @@
+# Test Configuration: Gateway Integration Testing
+# This configuration sends transactions to the Gateway service
+
+simulator:
+  mode: FIXED_QPS
+
+  rate-control:
+    qps: 50              # Send 50 requests per second
+    concurrency: 10      # Max 10 concurrent requests
+
+  execution:
+    max-records: 1000    # Send 1000 transactions total
+
+  # Gateway configuration
+  target:
+    type: HTTP
+    base-url: http://localhost:8080
+    endpoint: /api/v1/transactions
+    timeout-ms: 10000    # 10 second timeout
+
+  # Data source configuration
+  source:
+    type: CSV
+    path: data/credit-card-transactions.csv
+    has-header: true
+
+  # Output configuration
+  output:
+    path: "output/simulation-results-gateway-test"
+    format: JSONL
+
+  # Metrics configuration
+  metrics:
+    enabled: true
+    report-interval-sec: 10
+
+  # Evaluation configuration
+  evaluation:
+    enabled: true
+    baseline-latency-ms: 100
+    max-latency-ms: 500

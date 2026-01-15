@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: gateway-service
+  cloud:
+    compatibility-verifier:
+      enabled: false  # Disable Spring Cloud compatibility check
 
 gateway:
   # Base URL of the orchestrator service
@@ -14,12 +17,32 @@ gateway:
   log-requests: true
   log-responses: true
 
+# Sentinel configuration
+spring.cloud.sentinel:
+  transport:
+    dashboard: localhost:8858  # Sentinel Dashboard address
+    port: 8719                 # Sentinel API port
+  eager: true                  # Enable early startup
+  datasource:
+    # Flow control rules
+    flow:
+      file:
+        file: classpath:sentinel-rules.json
+        rule-type: flow
+        data-type: json
+      # Uncomment below to use Nacos for rule persistence
+      # nacos:
+      #   server-addr: localhost:8848
+      #   dataId: ${spring.application.name}-flow-rules
+      #   groupId: SENTINEL_GROUP
+      #   rule-type: flow
+
 # Spring Actuator configuration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health  # Only expose health in production
       base-path: /actuator
   endpoint:
     health:

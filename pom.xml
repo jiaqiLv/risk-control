@@ -50,6 +50,10 @@
         <grpc.version>1.60.0</grpc.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
+
+        <!-- Sentinel Version -->
+        <sentinel.version>1.8.6</sentinel.version>
+        <spring-cloud-alibaba.version>2022.0.0.0</spring-cloud-alibaba.version>
     </properties>
 
     <repositories>

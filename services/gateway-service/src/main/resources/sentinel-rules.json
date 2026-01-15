@@ -1,0 +1,20 @@
+[
+  {
+    "resource": "/api/v1/transactions",
+    "limitApp": "default",
+    "grade": 1,
+    "count": 1000,
+    "strategy": 0,
+    "controlBehavior": 0,
+    "clusterMode": false
+  },
+  {
+    "resource": "/api/v1/transactions",
+    "limitApp": "default",
+    "grade": 0,
+    "count": 200,
+    "strategy": 0,
+    "controlBehavior": 2,
+    "clusterMode": false
+  }
+]

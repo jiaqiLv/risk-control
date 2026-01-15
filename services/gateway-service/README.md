@@ -96,11 +96,7 @@ gateway:
 }
 ```
 
-### 2. 批量交易评估接口（待实现）
-
-**POST** `/api/v1/transactions/batch`
-
-### 3. 健康检查接口
+### 2. 健康检查接口
 
 **GET** `/api/v1/health`
 
@@ -113,7 +109,7 @@ gateway:
 }
 ```
 
-### 4. 服务信息接口
+### 3. 服务信息接口
 
 **GET** `/api/v1/info`
 
@@ -126,7 +122,7 @@ gateway:
 }
 ```
 
-### 5. Actuator监控接口
+### 4. Actuator监控接口
 
 **GET** `/actuator/health` - Spring Boot健康检查
 

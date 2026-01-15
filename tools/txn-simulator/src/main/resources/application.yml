@@ -1,7 +1,7 @@
 # Transaction Simulator Configuration
 
 server:
-  port: 8081  # Avoid conflict with target service on port 8080
+  port: 8099
 
 spring:
   application:
@@ -35,7 +35,7 @@ simulator:
     type: GATEWAY
 
   # Replay Mode: COMMON, FIXED_QPS, REPLAY_DT, SCENARIO, STREAMING
-  mode: SCENARIO
+  mode: FIXED_QPS
 
   # Rate Control for FIXED_QPS mode
   rate-control:
