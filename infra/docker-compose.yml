@@ -62,6 +62,28 @@ services:
     networks:
       - risk-control-network
 
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: risk-control-nacos
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    environment:
+      MODE: standalone
+    volumes:
+      - C:\JaredLyu\OnTheWay\risk-control\infra\nacos\application.properties:/home/nacos/conf/application.properties
+      - C:\JaredLyu\OnTheWay\risk-control\infra\nacos:/home/nacos/data
+      - C:\JaredLyu\OnTheWay\risk-control\infra\nacos\logs:/home/nacos/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - risk-control-network
+
 networks:
   risk-control-network:
     driver: bridge
