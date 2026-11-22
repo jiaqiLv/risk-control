@@ -27,8 +27,38 @@ spring:
   liquibase:
     enabled: false
 
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: transaction-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: latest
+      enable-auto-commit: false  # Manual commit
+      max-poll-records: 500
+      fetch-min-bytes: 1024
+      fetch-max-wait-ms: 500
+    properties:
+      spring.json.trusted.packages: "*"
+
 # Service Configuration
 transaction:
+  # Data collection settings
+  data-collection:
+    enabled: true
+    topic: tx.events
+    dlq-topic: tx.dlq
+  # Batch processing settings
+  batch:
+    size: 100  # Batch size for database writes
+    linger-ms: 1000  # Time window for batch flush (milliseconds)
+    enabled: true
+  # Export settings
+  export:
+    output-dir: ./exports
+    max-file-size: 1GB
+    supported-formats: CSV,PARQUET,JSON
   service:
     # Statistics cache TTL (seconds)
     stats-cache-ttl: 300
