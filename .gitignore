@@ -55,3 +55,9 @@ application-local.properties
 ############################
 target/
 logs/
+
+############################
+# Local Tooling
+############################
+.claude/
+nul
