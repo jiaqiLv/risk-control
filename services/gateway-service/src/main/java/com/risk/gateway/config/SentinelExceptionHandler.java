@@ -8,14 +8,15 @@ import com.alibaba.csp.sentinel.slots.block.flow.FlowException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * Custom Sentinel block exception handler.
@@ -68,18 +69,16 @@ public class SentinelExceptionHandler implements BlockRequestHandler {
             // Build error response
             String jsonResponse;
             try {
-                StringBuilder json = new StringBuilder();
-                json.append("{");
-                json.append("\"success\":false,");
-                json.append("\"errorCode\":\"").append(errorCode).append("\",");
-                json.append("\"message\":\"").append(message).append("\",");
-                json.append("\"httpStatus\":").append(status.value()).append(",");
-                json.append("\"timestamp\":").append(System.currentTimeMillis()).append(",");
-                json.append("\"resource\":\"").append(
-                    blockException.getRule() != null ? blockException.getRule().getResource() : "unknown"
-                ).append("\"");
-                json.append("}");
-                jsonResponse = json.toString();
+                Map<String, Object> errorResponse = Map.of(
+                    "success", false,
+                    "errorCode", errorCode,
+                    "message", message,
+                    "httpStatus", status.value(),
+                    "timestamp", System.currentTimeMillis(),
+                    "resource", blockException.getRule() != null ? blockException.getRule().getResource() : "unknown"
+                );
+                jsonResponse = objectMapper.writeValueAsString(errorResponse);
+
             } catch (Exception e) {
                 log.error("Failed to build error response", e);
                 jsonResponse = "{\"success\":false,\"message\":\"Internal error\"}";

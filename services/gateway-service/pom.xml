@@ -84,6 +84,33 @@
             <artifactId>sentinel-datasource-nacos</artifactId>
             <version>1.8.6</version>
         </dependency>
+
+        <!-- FastJSON for Nacos data serialization -->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.83</version>
+        </dependency>
+
+        <!-- Nacos Client for configuration management -->
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-client</artifactId>
+            <version>2.2.1</version>
+        </dependency>
+
+        <!-- javax.annotation for @PostConstruct -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+
+        <!-- Spring Kafka for messaging -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

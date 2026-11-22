@@ -4,6 +4,7 @@ import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRule;
 import com.alibaba.csp.sentinel.slots.block.flow.FlowRuleManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.risk.gateway.config.NacosConfigService;
 import com.risk.gateway.model.RateLimitRule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Service for managing Sentinel rate limit rules.
+ * Service for managing Sentinel rate limit rules with Nacos persistence.
  */
 @Slf4j
 @Service
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class RateLimitService {
 
     private final ObjectMapper objectMapper;
+    private final NacosConfigService nacosConfigService;
     private static final String RULES_FILE_PATH = "src/main/resources/sentinel-rules.json";
 
     /**
@@ -156,16 +158,36 @@ public class RateLimitService {
     }
 
     /**
-     * Persist rules to JSON file.
+     * Persist rules to both local file and Nacos.
+     * - Local file: quick backup and offline support
+     * - Nacos: centralized persistence and cluster sync
      */
     private void persistRulesToFile(List<FlowRule> flowRules) {
+        // Convert FlowRules to RateLimitRules for Nacos storage
+        List<RateLimitRule> rateLimitRules = flowRules.stream()
+                .map(this::convertToRateLimitRule)
+                .collect(Collectors.toList());
+
+        // Persist to local file (backup/offline support)
         try {
             File file = new File(RULES_FILE_PATH);
             objectMapper.writerWithDefaultPrettyPrinter()
                     .writeValue(file, flowRules);
-            log.info("Persisted {} flow rules to {}", flowRules.size(), RULES_FILE_PATH);
+            log.info("Persisted {} flow rules to local file: {}", flowRules.size(), RULES_FILE_PATH);
         } catch (IOException e) {
             log.error("Failed to persist flow rules to file: {}", RULES_FILE_PATH, e);
+        }
+
+        // Persist to Nacos (centralized storage and cluster sync)
+        try {
+            boolean success = nacosConfigService.publishRules(rateLimitRules);
+            if (success) {
+                log.info("Successfully published {} rules to Nacos", rateLimitRules.size());
+            } else {
+                log.warn("Failed to publish rules to Nacos");
+            }
+        } catch (Exception e) {
+            log.error("Error publishing rules to Nacos", e);
         }
     }
 }

@@ -7,6 +7,16 @@ spring:
   cloud:
     compatibility-verifier:
       enabled: false  # Disable Spring Cloud compatibility check
+  # Kafka configuration for async data collection
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: 1  # Wait for leader ack only (async)
+      retries: 0  # No retries to avoid blocking
+      linger-ms: 10  # 10ms batch wait
+      buffer-memory: 33554432  # 32MB buffer
 
 gateway:
   # Base URL of the orchestrator service
@@ -16,6 +26,19 @@ gateway:
   # Enable request/response logging
   log-requests: true
   log-responses: true
+  # Data collection settings
+  data-collection:
+    enabled: true
+    async-publish: true
+    topic: tx.events
+
+# Nacos configuration for rule persistence
+nacos:
+  config:
+    server-addr: localhost:8848
+    namespace: public
+    group-id: SENTINEL_GROUP
+    flow-rules-dataId: ${spring.application.name}-flow-rules
 
 # Sentinel configuration
 spring.cloud.sentinel:
@@ -24,18 +47,15 @@ spring.cloud.sentinel:
     port: 8719                 # Sentinel API port
   eager: true                  # Enable early startup
   datasource:
-    # Flow control rules
+    # Flow control rules - Nacos persistence
     flow:
-      file:
-        file: classpath:sentinel-rules.json
+      nacos:
+        server-addr: ${nacos.config.server-addr}
+        namespace: ${nacos.config.namespace}
+        dataId: ${nacos.config.flow-rules-dataId}
+        groupId: ${nacos.config.group-id}
         rule-type: flow
         data-type: json
-      # Uncomment below to use Nacos for rule persistence
-      # nacos:
-      #   server-addr: localhost:8848
-      #   dataId: ${spring.application.name}-flow-rules
-      #   groupId: SENTINEL_GROUP
-      #   rule-type: flow
 
 # Spring Actuator configuration
 management:
