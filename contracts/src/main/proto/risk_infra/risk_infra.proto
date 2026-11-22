@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package risk_infra;
+
+option java_multiple_files = true;
+option java_package = "com.riskcontrol.riskinfra";
+option java_outer_classname = "RiskInfraProto";
+
+///
+/// RiskInfraService provides inference capabilities for risk infrastructure.
+///
+service RiskInfraService {
+  ///
+  /// Performs inference using the provided request and returns the inference response.
+  ///
+  rpc Inference (InferenceRequest) returns (InferenceResponse);
+}
+
+message InferenceRequest {
+  string request_id = 1;
+  int64 request_timestamp_ms = 2;
+  string model_name = 3;
+  string model_version = 4;
+  string feature_version = 5;
+  SubGraph subgraph = 6;
+}
+
+message SubGraph {
+  repeated Node nodes = 1;
+  repeated Edge edges = 2;
+  int32 hops = 3;
+}
+
+message Node {
+  string node_id = 1;
+  string node_type = 2;
+  map<string, float> features = 3;
+}
+
+message Edge {
+  string edge_id = 1;
+  string source_node_id = 2;
+  string target_node_id = 3;
+  map<string, float> features = 4;
+  string edge_type = 5;
+  float weight = 6;
+}
+
+message InferenceResponse {
+  string request_id = 1;
+  int64 response_timestamp_ms = 2;
+  Decision decision = 3;
+  string model_name = 4;
+  string model_version = 5;
+  string feature_version = 6;
+  map<string, float> details = 7;
+
+  enum Decision {
+    APPROVE = 0;
+    REVIEW = 1;
+    REJECT = 2;
+  }
+}

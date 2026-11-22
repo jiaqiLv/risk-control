@@ -36,8 +36,11 @@ grpc:
     feature-service:
       address: 'static://localhost:9094'
       negotiation-type: plaintext
-    model-service:
-      address: 'static://localhost:9093'
+    # model-service:
+    #   address: 'static://10.60.38.173:49094'
+    #   negotiation-type: plaintext
+    risk-infra-service:
+      address: 'static://10.60.38.173:49094'
       negotiation-type: plaintext
 
 # Resilience4j

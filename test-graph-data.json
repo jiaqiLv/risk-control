@@ -1,0 +1,74 @@
+{
+    "nodes": [
+        {
+            "node_id": "user_001",
+            "node_type": "user",
+            "properties": {
+                "name": "张三",
+                "email": "zhangsan@example.com"
+            },
+            "created_at_ms": 1704340800000,
+            "updated_at_ms": 1704340800000
+        },
+        {
+            "node_id": "device_001",
+            "node_type": "device",
+            "properties": {
+                "device_fingerprint": "abc123"
+            },
+            "created_at_ms": 1704340800000,
+            "updated_at_ms": 1704340800000
+        },
+        {
+            "node_id": "ip_192.168.1.1",
+            "node_type": "ip",
+            "properties": {
+                "country": "CN",
+                "city": "Beijing"
+            },
+            "created_at_ms": 1704340800000,
+            "updated_at_ms": 1704340800000
+        },
+        {
+            "node_id": "merchant_001",
+            "node_type": "merchant",
+            "properties": {
+                "name": "淘宝",
+                "category": "电商"
+            },
+            "created_at_ms": 1704340800000,
+            "updated_at_ms": 1704340800000
+        }
+    ],
+    "edges": [
+        {
+            "edge_id": "edge_001",
+            "source_id": "user_001",
+            "target_id": "device_001",
+            "edge_type": "login_from",
+            "properties": {
+                "login_time": "2024-01-05 10:00:00"
+            },
+            "created_at_ms": 1704340800000
+        },
+        {
+            "edge_id": "edge_002",
+            "source_id": "device_001",
+            "target_id": "ip_192.168.1.1",
+            "edge_type": "has_ip",
+            "properties": {},
+            "created_at_ms": 1704340800000
+        },
+        {
+            "edge_id": "edge_003",
+            "source_id": "user_001",
+            "target_id": "merchant_001",
+            "edge_type": "payment_to",
+            "properties": {
+                "amount": "1500.00",
+                "currency": "CNY"
+            },
+            "created_at_ms": 1704340800000
+        }
+    ]
+}
