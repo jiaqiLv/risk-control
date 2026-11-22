@@ -25,3 +25,15 @@ Thumbs.db
 
 # Claude Code
 .claude/
+
+# Nacos 本地运行时数据（仅保留 README、schema.sql 与配置文件）
+infra/nacos/derby-data/
+infra/nacos/protocol/
+infra/nacos/naming/
+infra/nacos/tps/
+infra/nacos/connection/
+infra/nacos/*.bak
+
+# 交易模拟器运行输出与临时目录
+tools/txn-simulator/output/
+tmpclaude-*
